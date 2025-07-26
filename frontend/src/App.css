@@ -1,0 +1,15 @@
+/* TapYou/frontend/src/App.css */
+.app-container {
+  display: flex;
+  width: 100vw; /* Full viewport width */
+  height: 100vh; /* Full viewport height */
+  overflow: hidden; /* Prevent overall scrolling, individual components will manage */
+}
+
+.main-content-area {
+  flex-grow: 1; /* Takes all remaining width after sidebar */
+  display: flex;
+  flex-direction: column;
+  background-color: #f7f9fc; /* Background for the header and chat input area */
+  overflow: hidden; /* Ensure content within is scrollable if needed */
+}

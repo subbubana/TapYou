@@ -1,0 +1,77 @@
+/* TapYou/frontend/src/components/Sidebar.css */
+.sidebar-container {
+    width: 250px; /* Fixed width for the sidebar */
+    background-color: #0d1e3d; /* Dark blue background */
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Pushes header/nav to top, footer to bottom */
+    padding: 20px 0;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .sidebar-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 0 20px;
+  }
+  
+  .sidebar-header h1 {
+    margin: 0;
+    font-size: 28px;
+    color: #fff;
+  }
+  
+  .sidebar-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .nav-item {
+    padding: 12px 20px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .nav-item:hover {
+    background-color: #1a335a; /* Slightly lighter blue on hover */
+  }
+  
+  .nav-item.active {
+    background-color: #1a335a;
+    border-left: 4px solid #4a90e2; /* Accent color for active item */
+    padding-left: 16px; /* Adjust padding due to border */
+  }
+  
+  .sidebar-footer {
+    margin-top: auto; /* Pushes to the bottom */
+    padding: 20px;
+    border-top: 1px solid #1a335a; /* Separator line */
+  }
+  
+  .logout-button {
+    width: 100%;
+    padding: 10px 15px;
+    background-color: transparent;
+    color: #fff;
+    border: 1px solid #4a90e2; /* Border with accent color */
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px; /* Space between icon and text */
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  .logout-button:hover {
+    background-color: #4a90e2; /* Fill with accent color on hover */
+    color: #0d1e3d; /* Dark text on hover */
+  }
+  
+  .logout-button .icon {
+    font-size: 20px; /* For the arrow icon */
+  }

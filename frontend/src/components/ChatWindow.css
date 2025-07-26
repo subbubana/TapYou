@@ -1,0 +1,16 @@
+/* TapYou/frontend/src/components/ChatWindow.css */
+.chat-window-container {
+    flex-grow: 1; /* Takes remaining space in the App layout */
+    background-color: #fff; /* White background for the chat area */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Ensures scrollable area within for messages */
+  }
+  
+  .messages-display {
+    flex-grow: 1; /* Takes all available space to push input to bottom */
+    padding: 20px;
+    overflow-y: auto; /* Makes messages scrollable */
+    display: flex;
+    flex-direction: column; /* Stack messages vertically */
+  }

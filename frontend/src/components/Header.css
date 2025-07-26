@@ -1,0 +1,50 @@
+/* TapYou/frontend/src/components/Header.css */
+.header-container {
+    height: 60px; /* Fixed height for the header */
+    background-color: #f7f9fc; /* Light background */
+    border-bottom: 1px solid #e0e0e0; /* Subtle border at the bottom */
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Pushes logo left, icon right */
+    padding: 0 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    width: 100%; /* Take full width of its parent */
+  }
+  
+  .header-logo {
+    flex-grow: 1; /* Allows it to take available space */
+    text-align: center; /* Centers the "TapYou" text */
+    /* This margin-left helps visually center the logo in the remaining space
+       after accounting for the fixed-width sidebar, but might need tweaking
+       depending on exact desired alignment. */
+    margin-left: -80px;
+  }
+  
+  .header-logo h2 {
+    margin: 0;
+    color: #4a90e2; /* Accent color for the logo text */
+    font-size: 24px;
+  }
+  
+  /* Container for username and avatar */
+  .header-user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Space between username and avatar */
+  }
+  
+  /* Style for the displayed username text */
+  .header-user-info .username-display {
+    font-size: 16px;
+    color: #555; /* A slightly darker grey for text */
+    font-weight: 500;
+  }
+  
+  .header-user-icon .user-avatar { /* This class is on the div inside header-user-info */
+    width: 36px;
+    height: 36px;
+    background-color: #ccc; /* Grey circle for avatar placeholder */
+    border-radius: 50%; /* Makes it a circle */
+    border: 2px solid #4a90e2; /* Accent border */
+    cursor: pointer;
+  }
