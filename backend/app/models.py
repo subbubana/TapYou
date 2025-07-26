@@ -102,3 +102,16 @@ class MessageResponse(SQLModel):
     Standard model for API error or informational messages.
     """
     message: str
+
+# --- NEW: Authentication Models ---
+class LoginRequest(SQLModel):
+    """Model for user login request."""
+    username: str
+    password: str # Password will be ignored for now but kept for future expansion
+
+class LoginResponse(SQLModel):
+    """Model for user login response."""
+    access_token: str
+    token_type: str = "bearer"
+    username: str
+    user_id: UUID # Include user_id for client-side use
