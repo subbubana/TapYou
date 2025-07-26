@@ -15,6 +15,7 @@ body {
   height: 100vh; /* Full viewport height */
   width: 100vw; /* Full viewport width */
   overflow: hidden; /* Ensure no overflow outside the root */
+  max-width: 100vw; /* Ensure root doesn't exceed viewport */
 }
 
 /* Base styles for flex containers used throughout */
@@ -22,5 +23,6 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%; /* Important for nested flex containers to fill height */
-  width: 100%; /* Important for nested flex containers to fill width */
+  width: 100%; /* Ensure full width */
+  overflow: hidden; /* Prevent overflow in flex containers */
 }

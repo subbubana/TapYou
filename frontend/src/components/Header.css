@@ -9,21 +9,21 @@
     padding: 0 20px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     width: 100%; /* Take full width of its parent */
+    box-sizing: border-box; /* Include padding in width calculation */
+    min-width: 0; /* Allow flex item to shrink */
   }
   
   .header-logo {
-    flex-grow: 1; /* Allows it to take available space */
-    text-align: center; /* Centers the "TapYou" text */
-    /* This margin-left helps visually center the logo in the remaining space
-       after accounting for the fixed-width sidebar, but might need tweaking
-       depending on exact desired alignment. */
-    margin-left: -80px;
+    flex: 1; /* Take available space but don't grow beyond container */
+    text-align: left; /* Align logo to the left */
+    min-width: 0; /* Allow text to shrink if needed */
   }
   
   .header-logo h2 {
     margin: 0;
     color: #4a90e2; /* Accent color for the logo text */
     font-size: 24px;
+    white-space: nowrap; /* Prevent text wrapping */
   }
   
   /* Container for username and avatar */
@@ -31,6 +31,8 @@
     display: flex;
     align-items: center;
     gap: 10px; /* Space between username and avatar */
+    flex-shrink: 0; /* Prevent shrinking */
+    min-width: 0; /* Allow content to shrink if needed */
   }
   
   /* Style for the displayed username text */
@@ -38,13 +40,15 @@
     font-size: 16px;
     color: #555; /* A slightly darker grey for text */
     font-weight: 500;
+    white-space: nowrap; /* Prevent text wrapping */
   }
   
-  .header-user-icon .user-avatar { /* This class is on the div inside header-user-info */
+  .user-avatar {
     width: 36px;
     height: 36px;
     background-color: #ccc; /* Grey circle for avatar placeholder */
     border-radius: 50%; /* Makes it a circle */
     border: 2px solid #4a90e2; /* Accent border */
     cursor: pointer;
+    flex-shrink: 0; /* Prevent avatar from shrinking */
   }

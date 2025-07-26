@@ -20,7 +20,7 @@ function Sidebar() {
       </nav>
       <div className="sidebar-footer">
         <button className="logout-button" onClick={logout}> {/* Add onClick handler */}
-          <span className="icon">→</span> Log out
+          <span className="icon">←</span> Log out
         </button>
       </div>
     </div>
