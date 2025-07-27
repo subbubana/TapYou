@@ -1,0 +1,88 @@
+/* src/components/TaskStatusModal.css */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6); /* Semi-transparent black overlay */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Ensures modal is on top */
+  }
+  
+  .modal-content {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    text-align: center;
+  }
+  
+  .modal-content h3 {
+    color: #0d1e3d;
+    margin-bottom: 20px;
+    font-size: 24px;
+  }
+  
+  .modal-task-description {
+    font-size: 18px;
+    color: #555;
+    margin-bottom: 25px;
+    font-style: italic;
+  }
+  
+  .modal-status-buttons {
+    display: flex;
+    flex-wrap: wrap; /* Allow buttons to wrap */
+    justify-content: center;
+    gap: 15px; /* Space between buttons */
+    margin-bottom: 20px;
+  }
+  
+  .status-button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 25px; /* Pill-shaped buttons */
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    min-width: 120px; /* Ensure consistent width */
+    font-weight: bold;
+  }
+  
+  .status-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .status-button.active { background-color: #007bff; color: white; }
+  .status-button.completed { background-color: #28a745; color: white; }
+  .status-button.backlog { background-color: #dc3545; color: white; }
+  .status-button.pending { background-color: #6c757d; color: white; }
+  
+  .status-button.current { /* Highlight current status */
+    border: 2px solid #0d1e3d; /* Dark border for current state */
+    box-shadow: 0 0 0 3px #4a90e2; /* Accent shadow */
+    transform: scale(1.02);
+  }
+  
+  .modal-close-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #888;
+    transition: color 0.2s ease;
+  }
+  
+  .modal-close-button:hover {
+    color: #333;
+  }

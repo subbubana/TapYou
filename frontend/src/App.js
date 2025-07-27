@@ -4,6 +4,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './auth/AuthContext'; // Import AuthProvider and useAuth
 import LoginPage from './pages/LoginPage';
 import ChatPage from './pages/ChatPage';
+import TodoListPage from './pages/TodoListPage';
+import StatisticsPage from './pages/StatisticsPage';
+import AnalyticsPage from './pages/AnalyticsPage';
 import './index.css'; // Global styles for body/root, etc.
 import './App.css'; // Overall flex layout (app-container, main-content-area)
 
@@ -20,6 +23,22 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route
+            path="/todo"
+            element={
+              <PrivateRoute>
+                <TodoListPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/planner"
+            element={
+              <PrivateRoute>
+                <ChatPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
             path="/chat"
             element={
               <PrivateRoute>
@@ -27,12 +46,28 @@ function App() {
               </PrivateRoute>
             }
           />
-          {/* Redirect root to /chat if authenticated, otherwise to /login */}
+          <Route
+            path="/statistics"
+            element={
+              <PrivateRoute>
+                <StatisticsPage />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/analytics"
+            element={
+              <PrivateRoute>
+                <AnalyticsPage />
+              </PrivateRoute>
+            }
+          />
+          {/* Redirect root to /todo if authenticated, otherwise to /login */}
           <Route
             path="/"
             element={
               <PrivateRoute>
-                <Navigate to="/chat" replace />
+                <Navigate to="/todo" replace />
               </PrivateRoute>
             }
           />
