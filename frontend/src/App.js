@@ -3,6 +3,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext'; // Import AuthProvider and useAuth
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import ChatPage from './pages/ChatPage';
 import TodoListPage from './pages/TodoListPage';
 import StatisticsPage from './pages/StatisticsPage';
@@ -22,6 +23,7 @@ function App() {
       <AuthProvider> {/* Wrap the entire application with AuthProvider */}
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route
             path="/todo"
             element={

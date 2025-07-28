@@ -1,8 +1,8 @@
-// src/pages/LoginPage.js
 import React, { useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
-import { login as apiLogin } from '../api/auth'; // Renamed to avoid conflict
-import './LoginPage.css'; // Create this CSS file
+import { login as apiLogin } from '../api/auth';
+import { Link } from 'react-router-dom'; // Import Link for registration link
+import './LoginPage.css';
 
 function LoginPage() {
   const [username, setUsername] = useState('');
@@ -12,11 +12,10 @@ function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(''); // Clear previous errors
+    setError('');
     try {
       const data = await apiLogin(username, password);
       login(data.access_token, { username: data.username, user_id: data.user_id });
-      // Redirection handled by AuthContext
     } catch (err) {
       setError(err.message || 'An unexpected error occurred during login.');
     }
@@ -50,6 +49,9 @@ function LoginPage() {
           {error && <p className="error-message">{error}</p>}
           <button type="submit" className="login-button">Login</button>
         </form>
+        <div className="register-link">
+          Don't have an account? <Link to="/register">Register here</Link>
+        </div>
       </div>
     </div>
   );
