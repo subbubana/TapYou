@@ -1,9 +1,11 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import './Sidebar.css'; // Path remains relative because Sidebar.css is next to Sidebar.js
 import { useAuth } from '../auth/AuthContext'; // Import useAuth to handle logout
 
 function Sidebar() {
   const { logout } = useAuth(); // Get the logout function from context
+  const location = useLocation(); // Get current location to highlight active nav item
 
   return (
     <div className="sidebar-container">
@@ -12,10 +14,18 @@ function Sidebar() {
       </div>
       <nav className="sidebar-nav">
         <ul>
-          <li className="nav-item active">ToDo List</li> {/* This will eventually be a Link */}
-          <li className="nav-item">Planner</li>
-          <li className="nav-item">Statistics</li>
-          <li className="nav-item">Analytics</li>
+          <li className={`nav-item ${location.pathname === '/todo' ? 'active' : ''}`}>
+            <Link to="/todo">ToDo List</Link>
+          </li>
+          <li className={`nav-item ${location.pathname === '/planner' ? 'active' : ''}`}>
+            <Link to="/planner">Planner</Link>
+          </li>
+          <li className={`nav-item ${location.pathname === '/statistics' ? 'active' : ''}`}>
+            <Link to="/statistics">Statistics</Link>
+          </li>
+          <li className={`nav-item ${location.pathname === '/analytics' ? 'active' : ''}`}>
+            <Link to="/analytics">Analytics</Link>
+          </li>
         </ul>
       </nav>
       <div className="sidebar-footer">
