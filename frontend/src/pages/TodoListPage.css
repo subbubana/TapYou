@@ -19,38 +19,49 @@
     margin-bottom: 30px;
   }
   
-  .nav-arrow, .today-date-picker {
-    padding: 12px 20px;
-    border: 1px solid #ddd;
-    border-radius: 25px; /* Rounded buttons/input */
-    background-color: #fff;
+  .nav-arrow {
+    padding: 8px 16px;
+    border: none;
+    background-color: transparent;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 500;
+    color: #4a90e2;
     transition: all 0.2s ease;
-    outline: none; /* Remove outline on focus for input */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    outline: none;
   }
   
-  .nav-arrow:hover, .today-date-picker:hover {
-    background-color: #f8f9fa;
-    border-color: #4a90e2;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  .nav-arrow:hover {
+    color: #2d5aa0;
+    text-decoration: underline;
   }
   
   .nav-arrow:active {
-    background-color: #e9ecef;
     transform: translateY(1px);
   }
   
   .today-date-picker {
+    padding: 12px 20px;
+    border: 1px solid #ddd;
+    border-radius: 25px;
+    background-color: #fff;
     text-align: center;
     color: #333;
-    width: 160px; /* Adjust width as needed */
-    -webkit-appearance: none; /* Remove default date picker icon for custom styling */
+    width: 160px;
+    font-size: 16px;
+    font-weight: 500;
+    -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
     position: relative;
+    outline: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .today-date-picker:hover {
+    background-color: #f8f9fa;
+    border-color: #4a90e2;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   }
   
   /* Add calendar icon to date picker */
@@ -88,9 +99,23 @@
   }
   
   .filter-button.active {
-    background-color: #4a90e2; /* Blue for active */
     color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .filter-button.filter-active.active {
+    background-color: #4a90e2; /* Blue for active */
     box-shadow: 0 4px 8px rgba(74, 144, 226, 0.3);
+  }
+  
+  .filter-button.filter-completed.active {
+    background-color: #28a745; /* Green for completed */
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+  }
+  
+  .filter-button.filter-backlog.active {
+    background-color: #dc3545; /* Red for backlog */
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
   }
   
   .filter-button:not(.active) {

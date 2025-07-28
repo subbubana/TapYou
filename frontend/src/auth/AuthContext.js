@@ -8,6 +8,7 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null); // Stores {username, user_id}
+  const [loadingAuth, setLoadingAuth] = useState(true); // New state for initial auth check
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,6 +24,7 @@ export const AuthProvider = ({ children }) => {
         logout(); // Clear invalid data
       }
     }
+    setLoadingAuth(false); // Auth check complete
   }, []);
 
   const login = (token, userData) => {
@@ -42,7 +44,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, loadingAuth }}>
       {children}
     </AuthContext.Provider>
   );

@@ -2,29 +2,18 @@
 .task-card-container {
     background-color: #fff;
     border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 15px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 15px 20px;
+    margin-bottom: 8px;
     cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    position: relative;
-    min-height: 100px;
+    transition: background-color 0.2s ease;
     display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    align-items: flex-start;
+    min-height: auto;
+    flex-grow: 0;
   }
   
   .task-card-container:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-    border-color: #d0d0d0;
-  }
-  
-  .task-content {
-    flex-grow: 1;
-    display: flex;
-    align-items: flex-start;
+    background-color: #f8f9fa;
   }
   
   .task-description {
@@ -32,65 +21,7 @@
     font-size: 16px;
     color: #333;
     line-height: 1.5;
-    font-weight: 400;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     word-wrap: break-word;
     flex-grow: 1;
-  }
-  
-  .task-status-badge {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    margin-top: 15px;
-  }
-  
-  .status-badge {
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #fff;
-    text-transform: lowercase;
-    letter-spacing: 0.5px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-  
-  /* Status specific colors */
-  .status-badge.status-pending {
-    background-color: #6c757d; /* Grey */
-  }
-  
-  .status-badge.status-active {
-    background-color: #007bff; /* Blue */
-  }
-  
-  .status-badge.status-completed {
-    background-color: #28a745; /* Green */
-  }
-  
-  .status-badge.status-backlog {
-    background-color: #dc3545; /* Red */
-  }
-  
-  /* Hover effects for status badges */
-  .task-card-container:hover .status-badge {
-    transform: scale(1.05);
-    transition: transform 0.2s ease;
-  }
-  
-  /* Responsive design */
-  @media (max-width: 768px) {
-    .task-card-container {
-      padding: 15px;
-      min-height: 80px;
-    }
-    
-    .task-description {
-      font-size: 14px;
-    }
-    
-    .status-badge {
-      padding: 4px 10px;
-      font-size: 11px;
-    }
   }
