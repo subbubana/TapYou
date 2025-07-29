@@ -45,8 +45,7 @@ class UserResponse(UserBase):
 # --- Task Models (remain largely unchanged in definition, but how they are used will change) ---
 class TaskBase(SQLModel):
     task_description: str = Field(nullable=False, max_length=1000)
-    current_status: str = Field(default="pending", max_length=50)
-    pushed_from_past: bool = Field(default=False)
+    current_status: str = Field(default="active", max_length=50)
     user_id: UUID = Field(foreign_key="users.user_id", nullable=False, index=True)
 
 class Task(TaskBase, table=True):
@@ -62,23 +61,26 @@ class Task(TaskBase, table=True):
 # --- API Input/Output Models for Tasks (THESE WILL CHANGE IN ROUTERS - username field removed) ---
 # Keeping them here for now, but they will be simplified for authenticated use in the routers
 class TaskCreateInput(SQLModel):
-    # This will be refined in routers to only take task_description from authenticated user
-    username: str = Field(nullable=False, max_length=100) # This field will be removed from actual API usage
+    """
+    Pydantic model for the request body when creating a new task.
+    Username is derived from the authenticated user's token.
+    """
+    # REMOVED: username: str = Field(...)
     task_description: str = Field(nullable=False, max_length=1000)
 
 class TaskUpdateInput(SQLModel):
-    # This will be refined in routers
-    username: str = Field(nullable=False, max_length=100) # This field will be removed
+    """
+    Pydantic model for the request body when updating an existing task.
+    Username is derived from the authenticated user's token.
+    """
+    # REMOVED: username: str = Field(...)
     task_description: Optional[str] = None
     current_status: Optional[str] = None
 
 class TaskDeleteInput(SQLModel):
-    # This will be refined in routers
-    username: str = Field(nullable=False, max_length=100) # This field will be removed
+    pass
 
 class TaskBatchDeleteInput(SQLModel):
-    # This will be refined in routers
-    username: str = Field(nullable=False, max_length=100) # This field will be removed
     task_ids: List[UUID] = Field(nullable=False)
 
 
@@ -99,3 +101,9 @@ class Token(SQLModel): # Renamed from LoginResponse for standard JWT naming
     # Added for convenience to client, though user_id is in JWT payload
     username: str
     user_id: UUID
+
+class TaskStatusCounts(SQLModel):
+    active: int = 0
+    completed: int = 0
+    backlog: int = 0
+    total: int = 0 # Optional: A total count of all tasks for the user

@@ -74,5 +74,10 @@ export const authenticatedFetch = async (url, options = {}) => {
     throw new Error(errorData.detail || `API error: ${response.status}`);
   }
 
+  // Handle 204 No Content responses (like DELETE requests)
+  if (response.status === 204) {
+    return null; // Return null for successful DELETE operations
+  }
+
   return response.json();
 };

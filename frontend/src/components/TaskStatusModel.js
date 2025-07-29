@@ -5,7 +5,7 @@ import './TaskStatusModel.css'; // Create this CSS file
 function TaskStatusModal({ isOpen, onClose, onStatusChange, task }) {
   if (!isOpen || !task) return null;
 
-  const statuses = ['active', 'completed', 'backlog', 'pending']; // Possible statuses
+  const statuses = ['active', 'completed', 'backlog']; // Possible statuses
 
   return (
     <div className="modal-overlay">
