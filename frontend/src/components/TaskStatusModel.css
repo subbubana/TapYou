@@ -63,7 +63,6 @@
   .status-button.active { background-color: #007bff; color: white; }
   .status-button.completed { background-color: #28a745; color: white; }
   .status-button.backlog { background-color: #dc3545; color: white; }
-  .status-button.pending { background-color: #6c757d; color: white; }
   
   .status-button.current { /* Highlight current status */
     border: 2px solid #0d1e3d; /* Dark border for current state */

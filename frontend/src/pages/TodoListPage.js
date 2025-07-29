@@ -4,82 +4,194 @@ import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import TaskCard from '../components/TaskCard';
 import TaskStatusModal from '../components/TaskStatusModel';
+import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import { useAuth } from '../auth/AuthContext';
-import { format, subDays, addDays } from 'date-fns'; // For date manipulation
-import './TodoListPage.css'; // Create this CSS file
+import { format, subDays, addDays } from 'date-fns';
+import { tasks as tasksApi } from '../api'; // Import tasks API
+import './TodoListPage.css';
 import '../App.css'; // Keep the App.css for overall layout
 
-// Dummy API functions (will be replaced with actual fetch calls later)
-const fetchTasks = async (username, date, statusFilter) => {
-  console.log(`Fetching tasks for ${username} on ${format(date, 'yyyy-MM-dd')} with filter: ${statusFilter}`);
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-
-  // --- Placeholder Logic ---
-  const allDummyTasks = [
-    { id: '1', user_id: 'user1', task_description: 'Call Bunny tomorrow', current_status: 'active', created_at: '2025-07-26T10:00:00Z', modified_at: '2025-07-26T10:00:00Z', pushed_from_past: false },
-    { id: '2', user_id: 'user1', task_description: 'Work on TapYou backend', current_status: 'completed', created_at: '2025-07-25T09:30:00Z', modified_at: '2025-07-25T15:00:00Z', pushed_from_past: false },
-    { id: '3', user_id: 'user1', task_description: 'Go to Walmart for groceries', current_status: 'active', created_at: '2025-07-26T11:00:00Z', modified_at: '2025-07-26T11:00:00Z', pushed_from_past: false },
-    { id: '4', user_id: 'user1', task_description: 'Review agent design doc', current_status: 'backlog', created_at: '2025-07-20T14:00:00Z', modified_at: '2025-07-22T09:00:00Z', pushed_from_past: true },
-    { id: '5', user_id: 'user2', task_description: 'Team meeting agenda', current_status: 'active', created_at: '2025-07-26T16:00:00Z', modified_at: '2025-07-26T16:00:00Z', pushed_from_past: false },
-  ];
-
-  // Filter by user (assuming user1 for current demo)
-  const userTasks = allDummyTasks.filter(task => task.user_id === 'user1'); // Replace with actual user.user_id
-
-  // Filter by date (simple check: if task created "today" or not for backlog)
-  const filteredByDate = userTasks.filter(task => {
-    const taskDate = new Date(task.created_at);
-    // For simplicity, tasks "for today" are ones created today or pushed from past
-    // A real implementation would involve 'due_date' or more complex date ranges
-    return format(taskDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd') || task.pushed_from_past;
-  });
-
-
-  // Apply status filter
-  if (statusFilter === 'active') {
-    return filteredByDate.filter(task => task.current_status === 'active' || task.current_status === 'pending');
-  } else if (statusFilter === 'completed') {
-    return filteredByDate.filter(task => task.current_status === 'completed');
-  } else if (statusFilter === 'backlog') {
-    return filteredByDate.filter(task => task.current_status === 'backlog' || task.pushed_from_past);
-  }
-  return filteredByDate; // Default to all if no filter
-};
-
-// Dummy API to update task (will be replaced)
-const updateTaskStatus = async (taskId, newStatus) => {
-  console.log(`Updating task ${taskId} to status: ${newStatus}`);
-  await new Promise(resolve => setTimeout(resolve, 300));
-  // In a real app, this would return the updated task from backend
-  return { success: true, taskId, newStatus };
-};
-// --- End Placeholder Logic ---
-
-
 function TodoListPage() {
-  const { user } = useAuth(); // Get authenticated user info
+  const { user } = useAuth(); // Get authenticated user info: {username, user_id}
   const [selectedDate, setSelectedDate] = useState(new Date()); // Defaults to today
   const [activeFilter, setActiveFilter] = useState('active'); // 'active', 'completed', 'backlog'
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTaskForModal, setSelectedTaskForModal] = useState(null);
+  const [taskCounts, setTaskCounts] = useState({ active: 0, completed: 0, backlog: 0, total: 0 }); // State for counts
+  
+  // New state for create task modal
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newTaskDescription, setNewTaskDescription] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  
+  // New state for edit task modal
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [editedTaskDescription, setEditedTaskDescription] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+
+  // New state for delete confirmation modal
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingTask, setDeletingTask] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // New state for inline task creation
+  const [newTaskInput, setNewTaskInput] = useState('');
+  const [isAddingTask, setIsAddingTask] = useState(false);
 
   // Function to fetch and update tasks
   const loadTasks = async () => {
-    if (!user) return;
+    if (!user?.username) return; // Ensure user is authenticated
+
     setLoading(true);
-    // Replace 'user.username' with a dummy if user is null for initial testing without login
-    const fetchedTasks = await fetchTasks(user?.username || 'user1', selectedDate, activeFilter);
-    setTasks(fetchedTasks);
-    setLoading(false);
+    try {
+      const fetchedTasks = await tasksApi.getTasks(
+        user.username,
+        activeFilter,
+        selectedDate // Pass selectedDate as targetDate
+      );
+      setTasks(fetchedTasks);
+    } catch (error) {
+      console.error('Failed to fetch tasks:', error);
+      setTasks([]); // Clear tasks on error
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Effect to load tasks when date or filter changes
+  // Function to fetch and update counts
+  const loadTaskCounts = async () => {
+    if (!user?.username) return;
+    try {
+      const fetchedCounts = await tasksApi.getTaskCounts(
+        user.username,
+        selectedDate // Pass selectedDate as targetDate
+      );
+      setTaskCounts(fetchedCounts);
+    } catch (error) {
+      console.error('Failed to fetch task counts:', error);
+      setTaskCounts({ active: 0, completed: 0, backlog: 0, total: 0 });
+    }
+  };
+
+  // Function to create a new task
+  const handleCreateTask = async () => {
+    if (!newTaskDescription.trim()) return;
+    
+    setIsCreating(true);
+    try {
+      await tasksApi.createTask(newTaskDescription.trim());
+      setNewTaskDescription('');
+      setIsCreateModalOpen(false);
+      // Refresh tasks and counts
+      await loadTasks();
+      await loadTaskCounts();
+    } catch (error) {
+      console.error('Failed to create task:', error);
+      // You could add a toast notification here
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  // Function to edit a task
+  const handleEditTask = (task) => {
+    setEditingTask(task);
+    setEditedTaskDescription(task.task_description);
+    setIsEditModalOpen(true);
+  };
+
+  // Function to save edited task
+  const handleSaveEdit = async () => {
+    if (!editedTaskDescription.trim() || !editingTask) return;
+    
+    setIsEditing(true);
+    try {
+      await tasksApi.updateTask(editingTask.task_id, {
+        task_description: editedTaskDescription.trim()
+      });
+      setEditedTaskDescription('');
+      setEditingTask(null);
+      setIsEditModalOpen(false);
+      // Refresh tasks and counts
+      await loadTasks();
+      await loadTaskCounts();
+    } catch (error) {
+      console.error('Failed to update task:', error);
+      // You could add a toast notification here
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  // Function to delete a task
+  const handleDeleteTask = async (task) => {
+    if (!task) return;
+    
+    setDeletingTask(task);
+    setIsDeleteModalOpen(true);
+  };
+
+  // Function to create a new task inline
+  const handleAddTaskInline = async () => {
+    if (!newTaskInput.trim()) return;
+    
+    setIsAddingTask(true);
+    try {
+      await tasksApi.createTask(newTaskInput.trim());
+      setNewTaskInput('');
+      
+      // Reset textarea height and scrollbar
+      const textarea = document.querySelector('.inline-task-input');
+      if (textarea) {
+        textarea.style.height = '40px';
+        textarea.style.overflowY = 'hidden';
+      }
+      
+      // Refresh tasks and counts
+      await loadTasks();
+      await loadTaskCounts();
+    } catch (error) {
+      console.error('Failed to create task:', error);
+      alert(`Failed to create task: ${error.message}`);
+    } finally {
+      setIsAddingTask(false);
+    }
+  };
+
+  // Function to handle Enter key press in input
+  const handleInputKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleAddTaskInline();
+    }
+  };
+
+  // Function to auto-resize textarea
+  const handleTextareaChange = (e) => {
+    setNewTaskInput(e.target.value);
+    
+    // Auto-resize textarea
+    const textarea = e.target;
+    textarea.style.height = 'auto';
+    const newHeight = Math.min(textarea.scrollHeight, 120);
+    textarea.style.height = newHeight + 'px';
+    
+    // Show scrollbar only when content exceeds visible area
+    if (textarea.scrollHeight > 120) {
+      textarea.style.overflowY = 'auto';
+    } else {
+      textarea.style.overflowY = 'hidden';
+    }
+  };
+
+  // Effect to load tasks and counts when date, filter, or user changes
   useEffect(() => {
     loadTasks();
-  }, [selectedDate, activeFilter, user]); // Reload when user context changes too
+    loadTaskCounts();
+  }, [selectedDate, activeFilter, user]); // Reload when user context changes too (e.g., after login)
 
   // Date navigation handlers
   const goToYesterday = () => setSelectedDate(subDays(selectedDate, 1));
@@ -100,16 +212,19 @@ function TodoListPage() {
   const handleStatusChange = async (taskId, newStatus) => {
     setIsModalOpen(false); // Close modal immediately
     setLoading(true); // Show loading while updating
-    const result = await updateTaskStatus(taskId, newStatus);
-    if (result.success) {
-      // Optimistically update the task list or refetch
-      // For now, refetch all tasks to ensure consistency
+    try {
+      // Call the backend API to update status
+      const result = await tasksApi.updateTask(taskId, { current_status: newStatus });
+      console.log('Task update result:', result);
+      // Re-fetch all tasks and counts to ensure UI is up-to-date
       await loadTasks();
-    } else {
-      console.error('Failed to update task status.');
-      // Handle error, maybe show a toast message
+      await loadTaskCounts();
+    } catch (error) {
+      console.error('Failed to update task status:', error);
+      // Handle error, maybe show a toast message to user
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -119,34 +234,34 @@ function TodoListPage() {
         <Header />
         <div className="todo-list-page-container">
           <div className="todo-header">
-                      <div className="date-navigation">
-            <button onClick={goToYesterday} className="nav-arrow">← Previous Day</button>
-            <input
-              type="date"
-              className="today-date-picker"
-              value={format(selectedDate, 'yyyy-MM-dd')}
-              onChange={handleDateChange}
-            />
-            <button onClick={goToTomorrow} className="nav-arrow">Next Day →</button>
-          </div>
+            <div className="date-navigation">
+              <button onClick={goToYesterday} className="nav-arrow">← Previous Day</button>
+              <input
+                type="date"
+                className="today-date-picker"
+                value={format(selectedDate, 'yyyy-MM-dd')}
+                onChange={handleDateChange}
+              />
+              <button onClick={goToTomorrow} className="nav-arrow">Next Day →</button>
+            </div>
             <div className="filter-tabs">
               <button
                 className={`filter-button filter-active ${activeFilter === 'active' ? 'active' : ''}`}
                 onClick={() => setActiveFilter('active')}
               >
-                Active
+                Active ({taskCounts.active})
               </button>
               <button
                 className={`filter-button filter-completed ${activeFilter === 'completed' ? 'active' : ''}`}
                 onClick={() => setActiveFilter('completed')}
               >
-                Completed
+                Completed ({taskCounts.completed})
               </button>
               <button
                 className={`filter-button filter-backlog ${activeFilter === 'backlog' ? 'active' : ''}`}
                 onClick={() => setActiveFilter('backlog')}
               >
-                Backlog
+                Backlog ({taskCounts.backlog})
               </button>
             </div>
           </div>
@@ -158,9 +273,36 @@ function TodoListPage() {
               <p className="no-tasks-message">No tasks found for this selection.</p>
             ) : (
               tasks.map(task => (
-                <TaskCard key={task.id} task={task} onClick={handleTaskClick} />
+                <TaskCard 
+                  key={task.task_id} 
+                  task={task} 
+                  onClick={handleTaskClick}
+                  onEdit={handleEditTask}
+                  onDelete={handleDeleteTask}
+                />
               ))
             )}
+          </div>
+
+          {/* Bottom add task section */}
+          <div className="bottom-add-task-section">
+            <textarea
+              className="inline-task-input"
+              placeholder="Add new task..."
+              value={newTaskInput}
+              onChange={handleTextareaChange}
+              onKeyPress={handleInputKeyPress}
+              disabled={isAddingTask}
+              rows={1}
+            />
+            <button
+              className="add-task-button"
+              onClick={handleAddTaskInline}
+              disabled={!newTaskInput.trim() || isAddingTask}
+              title="Add new task (inline)"
+            >
+              <span className="add-icon">+</span>
+            </button>
           </div>
 
           <TaskStatusModal
@@ -169,6 +311,124 @@ function TodoListPage() {
             onStatusChange={handleStatusChange}
             task={selectedTaskForModal}
           />
+
+          {/* Create Task Modal */}
+          {isCreateModalOpen && (
+            <div className="modal-overlay">
+              <div className="modal-content create-task-modal">
+                <h3>Create New Task</h3>
+                <textarea
+                  className="task-description-input"
+                  placeholder="Enter task description..."
+                  value={newTaskDescription}
+                  onChange={(e) => setNewTaskDescription(e.target.value)}
+                  rows={4}
+                  autoFocus
+                />
+                <div className="modal-actions">
+                  <button 
+                    className="cancel-button"
+                    onClick={() => {
+                      setIsCreateModalOpen(false);
+                      setNewTaskDescription('');
+                    }}
+                    disabled={isCreating}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    className="create-button"
+                    onClick={handleCreateTask}
+                    disabled={!newTaskDescription.trim() || isCreating}
+                  >
+                    {isCreating ? 'Creating...' : 'Create Task'}
+                  </button>
+                </div>
+                <button 
+                  className="modal-close-button" 
+                  onClick={() => {
+                    setIsCreateModalOpen(false);
+                    setNewTaskDescription('');
+                  }}
+                >
+                  &times;
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Edit Task Modal */}
+          {isEditModalOpen && (
+            <div className="modal-overlay">
+              <div className="modal-content create-task-modal">
+                <h3>Edit Task</h3>
+                <textarea
+                  className="task-description-input"
+                  placeholder="Enter task description..."
+                  value={editedTaskDescription}
+                  onChange={(e) => setEditedTaskDescription(e.target.value)}
+                  rows={4}
+                  autoFocus
+                />
+                <div className="modal-actions">
+                  <button 
+                    className="cancel-button"
+                    onClick={() => {
+                      setIsEditModalOpen(false);
+                      setEditedTaskDescription('');
+                      setEditingTask(null);
+                    }}
+                    disabled={isEditing}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    className="create-button"
+                    onClick={handleSaveEdit}
+                    disabled={!editedTaskDescription.trim() || isEditing}
+                  >
+                    {isEditing ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+                <button 
+                  className="modal-close-button" 
+                  onClick={() => {
+                    setIsEditModalOpen(false);
+                    setEditedTaskDescription('');
+                    setEditingTask(null);
+                  }}
+                >
+                  &times;
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Delete Confirmation Modal */}
+          {isDeleteModalOpen && deletingTask && (
+            <DeleteConfirmModal
+              isOpen={isDeleteModalOpen}
+              onClose={() => setIsDeleteModalOpen(false)}
+              onConfirm={async () => {
+                setIsDeleting(true);
+                try {
+                  await tasksApi.deleteTask(deletingTask.task_id);
+                  setIsDeleteModalOpen(false);
+                  setDeletingTask(null);
+                  // Refresh tasks and counts
+                  await loadTasks();
+                  await loadTaskCounts();
+                } catch (error) {
+                  console.error('Failed to delete task:', error);
+                  alert(`Failed to delete task: ${error.message}`);
+                } finally {
+                  setIsDeleting(false);
+                }
+              }}
+              isDeleting={isDeleting}
+              task={deletingTask}
+            />
+          )}
         </div>
       </div>
     </div>

@@ -2,26 +2,113 @@
 .task-card-container {
     background-color: #fff;
     border: 1px solid #e0e0e0;
-    padding: 15px 20px;
-    margin-bottom: 8px;
+    padding: 10px 10px;
+    margin-right: 10px;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.1s ease;
     display: flex;
     align-items: flex-start;
-    min-height: auto;
-    flex-grow: 0;
+    width: 800px; /* Fixed constant width */
+    box-sizing: border-box; /* Include padding in width calculation */
+    /* min-height: 60px; /* Minimum height for consistent appearance */
+    /* height: auto; Allow height to grow automatically */
   }
   
   .task-card-container:hover {
-    background-color: #f8f9fa;
+    background-color: #f4f5f6;
+  }
+  
+  .task-content {
+    display: flex;
+    align-items: flex-start; /* Align to top for multi-line text */
+    justify-content: space-between;
+    width: 100%;
+    gap: 15px;
+    height: auto; /* Allow content to determine height */
   }
   
   .task-description {
     margin: 0;
     font-size: 16px;
     color: #333;
-    line-height: 1.5;
+    line-height: 1.4;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     word-wrap: break-word;
+    word-break: break-word; /* Force word breaking if needed */
     flex-grow: 1;
+    flex-shrink: 1; /* Allow text container to shrink */
+    min-width: 0; /* Allow text to shrink */
+    max-width: calc(100% - 80px); /* Reserve space for both edit and delete buttons */
+    white-space: normal; /* Allow text to wrap naturally */
+    overflow-wrap: break-word; /* Modern word wrapping */
+    height: auto; /* Allow text to determine its own height */
+  }
+  
+  .task-actions {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    flex-shrink: 0;
+  }
+  
+  .edit-task-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    opacity: 0.6;
+    flex-shrink: 0; /* Prevent edit button from shrinking */
+    margin-top: 2px; /* Align with first line of text */
+    width: 24px; /* Fixed width for edit button */
+    height: 24px; /* Fixed height for edit button */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .delete-task-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    opacity: 0.6;
+    flex-shrink: 0; /* Prevent delete button from shrinking */
+    margin-top: 2px; /* Align with first line of text */
+    width: 24px; /* Fixed width for delete button */
+    height: 24px; /* Fixed height for delete button */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* .edit-task-button:hover {
+    opacity: 1;
+    background-color: #f0f0f0;
+    transform: scale(1.1);
+  } */
+  
+  .edit-task-button:hover {
+    opacity: 1;
+    background-color: #f0f0f0;
+    transform: scale(1.1);
+  }
+  
+  .delete-task-button:hover {
+    opacity: 1;
+    background-color: #ffebee;
+    transform: scale(1.1);
+  }
+  
+  .edit-task-button:active {
+    transform: scale(0.95);
+  }
+  
+  .delete-task-button:active {
+    transform: scale(0.95);
   }

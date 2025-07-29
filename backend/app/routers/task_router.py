@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 from typing import Optional, List
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, date
 
 from ..database import get_session
 import app.models as models
@@ -39,7 +39,7 @@ router = APIRouter(
 async def create_task(
     *,
     session: Session = Depends(get_session),
-    task_description: str, # Directly takes task_description, user from token
+    task_input: models.TaskCreateInput, # Use the proper input model
     current_user: models.User = Depends(get_current_active_user) # Get authenticated user
 ):
     """
@@ -48,7 +48,7 @@ async def create_task(
     # user_id comes directly from the authenticated user
     db_task_base = models.TaskBase(
         user_id=current_user.user_id, # User ID from JWT
-        task_description=task_description
+        task_description=task_input.task_description
     )
     db_task = models.Task.model_validate(db_task_base)
     session.add(db_task)
@@ -75,8 +75,7 @@ async def update_task(
     *,
     session: Session = Depends(get_session),
     task_id: UUID,
-    task_description: Optional[str] = None, # No TaskUpdateInput model with username
-    current_status: Optional[str] = None,
+    task_input: models.TaskUpdateInput, # Use the proper input model
     current_user: models.User = Depends(get_current_active_user) # Authenticated user
 ):
     """
@@ -96,14 +95,14 @@ async def update_task(
             detail="You are not authorized to modify this task."
         )
 
-    if current_status is not None and current_status != db_task.current_status:
+    if task_input.current_status is not None and task_input.current_status != db_task.current_status:
         db_task.previous_status = db_task.current_status
         db_task.last_status_change_at = datetime.utcnow()
 
-    if task_description is not None:
-        db_task.task_description = task_description
-    if current_status is not None:
-        db_task.current_status = current_status
+    if task_input.task_description is not None:
+        db_task.task_description = task_input.task_description
+    if task_input.current_status is not None:
+        db_task.current_status = task_input.current_status
 
     db_task.modified_at = datetime.utcnow()
     session.add(db_task)
@@ -257,15 +256,20 @@ async def list_user_tasks(
     session: Session = Depends(get_session),
     username: str, # Path parameter for the username
     current_user: models.User = Depends(get_current_active_user), # Authenticated user
-    status: Optional[str] = Query(None, description="Filter tasks by current status (e.g., 'pending', 'completed')."),
-    show_fresh_only: bool = Query(True, description="If true, only shows tasks not carried forward from previous days (pushed_from_past=False)."),
+    status: Optional[str] = Query(..., description="Filter tasks by current status (e.g., 'pending', 'completed')."),
+    target_date: date = Query(..., description="Filter tasks for this specific date (YYYY-MM-DD). Required for 'active' and 'completed' statuses. Ignored for 'backlog' status."),
     sort_by: Optional[str] = Query(None, description="Field to sort by (e.g., 'created_at', 'modified_at', 'task_description')."),
     sort_order: Optional[str] = Query("asc", description="Sort order ('asc' or 'desc')."),
     limit: int = Query(100, ge=1, description="Maximum number of tasks to return."),
     offset: int = Query(0, ge=0, description="Number of tasks to skip from the beginning."),
 ):
     """
-    **Endpoint to list tasks for a specific user.**
+    **Endpoint to list tasks for a specific user, filtered by status and date.**
+    - If `target_date` is provided:
+        - For 'active' status: Tasks created on `target_date`.
+        - For 'completed' status: Tasks whose status was changed to 'completed' on `target_date`.
+        - For 'backlog' status: Tasks whose status was changed to 'backlog' on `target_date`.
+    - If `target_date` is NOT provided, returns all tasks for the specified status regardless of date.
     """
     # 1. Ensure the username in the path matches the authenticated user's username
     if current_user.username.lower() != username.lower():
@@ -281,8 +285,28 @@ async def list_user_tasks(
     if status:
         query = query.where(models.Task.current_status == status)
 
-    if show_fresh_only:
-        query = query.where(models.Task.pushed_from_past == False)
+    # Apply date filtering based on status (target_date is always provided now)
+    if status.lower() == 'active':
+        # For 'active' status, filter by created_at date
+        query = query.where(func.date(models.Task.created_at) == target_date)
+    elif status.lower() == 'completed':
+        # For 'completed', filter by last_status_change_at date
+        query = query.where(
+            (models.Task.last_status_change_at != None) & \
+            (func.date(models.Task.last_status_change_at) == target_date)
+        )
+    elif status.lower() == 'backlog':
+        # NEW LOGIC: Filter backlog tasks where last_status_change_at is on or BEFORE target_date
+        query = query.where(
+            (models.Task.last_status_change_at != None) & \
+            (func.date(models.Task.last_status_change_at) <= target_date) # <= (on or before)
+        )
+    else:
+        # Should not happen if status is properly validated by Query(..., enum=...)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid status filter. Status must be 'active', 'completed', or 'backlog'."
+        )
 
     if sort_by:
         valid_sort_fields = ["created_at", "modified_at", "task_description", "current_status"]
@@ -304,3 +328,125 @@ async def list_user_tasks(
 
     tasks = session.exec(query).all()
     return tasks
+
+
+# --- NEW: GET /tasks/user/{username}/counts ---
+@router.get(
+    "/user/{username}/counts",
+    response_model=models.TaskStatusCounts,
+    tags=["Tasks"],
+    summary="Get task counts by status for a user",
+    description="Returns the total count of active, completed, and backlog tasks for the authenticated user. The username in the path must match the authenticated user's username.",
+    operation_id="get_user_task_counts",
+    responses={
+        200: {"description": "Task counts retrieved successfully."},
+        401: {"model": models.MessageResponse, "description": "Authentication required."},
+        403: {"model": models.MessageResponse, "description": "Not authorized to view other user's task counts."},
+        404: {"model": models.MessageResponse, "description": "User not found."},
+    }
+)
+async def get_user_task_counts(
+    *,
+    session: Session = Depends(get_session),
+    username: str,
+    current_user: models.User = Depends(get_current_active_user),
+    target_date: date = Query(..., description="Filter counts for tasks associated with this specific date (YYYY-MM-DD)."), # NEW query param
+):
+    """
+    **Endpoint to get task counts by status for a user and optional date.**
+    Date filtering rules for counts are similar to task listing:
+    - For 'active' count: Tasks created on `target_date`.
+    - For 'completed' count: Tasks whose status changed to 'completed' on `target_date`.
+    - For 'backlog' count: Tasks whose status changed to 'backlog' on `target_date`.
+    If no `target_date` is provided, total counts across all dates are returned.
+    """
+    # Authorization: Ensure the username in the path matches the authenticated user's username
+    if current_user.username.lower() != username.lower():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to view other user's task counts."
+        )
+
+    # Initialize counts
+    task_counts_data = {
+        "active": 0,
+        "completed": 0,
+        "backlog": 0,
+        "total": 0
+    }
+
+    # Base query for the user
+    base_query = select(models.Task).where(models.Task.user_id == current_user.user_id)
+
+    # Get counts for 'active' tasks (filtered by created_at date)
+    active_query = base_query.where(models.Task.current_status == 'active')
+    active_query = active_query.where(func.date(models.Task.created_at) == target_date)
+    task_counts_data['active'] = session.exec(select(func.count()).select_from(active_query)).first() or 0
+
+    # Get counts for 'completed' tasks (filtered by last_status_change_at date)
+    completed_query = base_query.where(models.Task.current_status == 'completed')
+    completed_query = completed_query.where(
+        (models.Task.last_status_change_at != None) & \
+        (func.date(models.Task.last_status_change_at) == target_date)
+    )
+    task_counts_data['completed'] = session.exec(select(func.count()).select_from(completed_query)).first() or 0
+
+    # Get counts for 'backlog' tasks (NO DATE FILTER here)
+    backlog_query = base_query.where(models.Task.current_status == 'backlog')
+    backlog_query = backlog_query.where(
+        (models.Task.last_status_change_at != None) & \
+        (func.date(models.Task.last_status_change_at) <= target_date) # <= (on or before)
+    )
+    task_counts_data['backlog'] = session.exec(select(func.count()).select_from(backlog_query)).first() or 0
+
+    task_counts_data['total'] = task_counts_data['active'] + task_counts_data['completed'] + task_counts_data['backlog']
+
+    return models.TaskStatusCounts(**task_counts_data)
+
+
+# --- NEW: POST /tasks/auto-mark-backlog (Automated Background Process) ---
+@router.post(
+    "/auto-mark-backlog",
+    response_model=models.MessageResponse,
+    summary="Automated job to mark old active tasks as backlog",
+    description="Identifies active tasks created on previous days and updates their status to 'backlog'. This endpoint simulates a daily background cron job.",
+    operation_id="auto_mark_backlog_tasks",
+    responses={
+        200: {"description": "Backlog conversion job completed."},
+        401: {"model": models.MessageResponse, "description": "Authentication required (e.g., admin token)."},
+    }
+)
+async def auto_mark_backlog_tasks(
+    *,
+    session: Session = Depends(get_session),
+    # For a real system, this would be protected by an API Key or admin role check.
+    # For now, it requires any authenticated user.
+    current_user: models.User = Depends(get_current_active_user)
+):
+    """
+    **Endpoint to simulate a daily background job for moving old 'active' tasks to 'backlog'.**
+    """
+    # Get the current UTC date to compare against created_at dates
+    today_utc_date = date.today() # date.today() is timezone-aware, but func.date(datetime.utcnow())
+                                  # will effectively get the UTC date part.
+                                  # For robust comparison, ensure both sides are pure dates.
+
+    # Select active tasks created BEFORE today (UTC date part)
+    tasks_to_backlog = session.exec(
+        select(models.Task).where(
+            models.Task.current_status == 'active',
+            func.date(models.Task.created_at) < today_utc_date # Tasks created before today
+        )
+    ).all()
+
+    updated_count = 0
+    for task in tasks_to_backlog:
+        task.previous_status = task.current_status
+        task.current_status = 'backlog'
+        task.last_status_change_at = datetime.utcnow() # Mark when it became backlog
+        task.modified_at = datetime.utcnow()
+        session.add(task)
+        updated_count += 1
+    
+    session.commit()
+    return models.MessageResponse(message=f"Auto-marked {updated_count} old active tasks as backlog.")
