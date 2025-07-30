@@ -22,7 +22,7 @@ def create_db_and_tables():
     """
     # Ensure all models are imported so SQLModel.metadata knows about them
     # This imports the User and Task models, making them known to SQLModel
-    from app.models import User, Task
+    from app.models import User, Task, ChatMessage
     print("Attempting to create database tables (users and tasks) if they don't exist...")
     SQLModel.metadata.create_all(engine)
     print("Database tables created/checked successfully.")

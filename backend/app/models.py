@@ -18,6 +18,8 @@ class User(UserBase, table=True):
     hashed_password: str = Field(nullable=False) # Store hashed password
     is_verified: bool = Field(default=False) # New field for verification status
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+    chat_id: UUID = Field(default_factory=uuid4, unique=True, nullable=False)
+    chat_messages: list["ChatMessage"] = Relationship(back_populates="chat_owner")
 
     # Relationship to tasks
     tasks: list["Task"] = Relationship(back_populates="owner")
@@ -107,3 +109,22 @@ class TaskStatusCounts(SQLModel):
     completed: int = 0
     backlog: int = 0
     total: int = 0 # Optional: A total count of all tasks for the user
+
+class ChatMessageBase(SQLModel):
+    """Base model for chat message properties."""
+    chat_id: UUID = Field(foreign_key="users.chat_id", nullable=False, index=True) # Links to User's chat_id
+    is_user: bool = Field(nullable=False) # True if user sent, False otherwise
+    is_agent: bool = Field(nullable=False) # True if agent sent, False otherwise
+    content: str = Field(nullable=False)
+    timestamp: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+
+class ChatMessage(ChatMessageBase, table=True):
+    """Database model for the 'chat_messages' table."""
+    __tablename__ = "chat_messages"
+    message_id: UUID = Field(default_factory=uuid4, primary_key=True)
+
+    chat_owner: Optional[User] = Relationship(back_populates="chat_messages") # Relationship back to User
+
+class ChatResponse(SQLModel):
+    user_message: ChatMessage
+    agent_message: ChatMessage
