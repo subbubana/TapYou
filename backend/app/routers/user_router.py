@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select, func # Import func for lower()
 from typing import List
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from ..database import get_session
 import app.models as models
@@ -45,7 +45,8 @@ def create_user(*, session: Session = Depends(get_session), user_in: models.User
     db_user = models.User(
         username=user_in.username, # Store original casing, but lookup is lower
         hashed_password=hashed_password,
-        is_verified=True # User is verified by default
+        is_verified=True, # User is verified by default
+        chat_id=uuid4()
     )
     session.add(db_user)
     session.commit()

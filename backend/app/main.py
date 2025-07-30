@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import user_router, task_router, auth_router # Import the new routers
+from app.routers import user_router, task_router, auth_router, chat_history_router # Import the new routers
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Initialize FastAPI application
 app = FastAPI(
@@ -27,6 +31,7 @@ app.add_middleware(
 app.include_router(auth_router.router)
 app.include_router(user_router.router)
 app.include_router(task_router.router)
+app.include_router(chat_history_router.router)
 
 # No more direct endpoint definitions or helper functions here, they are in the routers.
 # The database creation logic is in init_db.py, run separately.
