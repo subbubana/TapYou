@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }) => {
     Cookies.set('currentUser', JSON.stringify(userData), { expires: 1 });
     setUser(userData);
     setIsAuthenticated(true);
-    navigate('/chat'); // Redirect to chat page on successful login
+    navigate('/planner'); // Redirect to planner page on successful login
   };
 
   const logout = () => {

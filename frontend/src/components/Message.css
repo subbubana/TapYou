@@ -7,7 +7,7 @@
   .message-bubble {
     padding: 12px 18px;
     border-radius: 20px;
-    max-width: 70%; /* Limit bubble width */
+    max-width: 80%; /* Increased from 70% to 85% to reduce line wrapping */
     word-wrap: break-word; /* Ensures text wraps */
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }

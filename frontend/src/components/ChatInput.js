@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './ChatInput.css';
 
-function ChatInput() {
+function ChatInput({ onSendMessage, disabled = false }) {
   const [inputValue, setInputValue] = useState('');
   const textareaRef = useRef(null);
 
@@ -24,13 +24,19 @@ function ChatInput() {
     setInputValue(event.target.value);
   };
 
-  const handleSendMessage = () => {
-    if (inputValue.trim()) { // Only send if input is not empty
-      console.log("Sending message:", inputValue);
+  const handleSendMessage = async () => {
+    if (inputValue.trim() && !disabled) { // Only send if input is not empty and not disabled
+      const messageText = inputValue.trim();
       setInputValue(''); // Clear input after sending
+      
       // After clearing, force height recalculation
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto'; // Reset to auto to shrink
+      }
+      
+      // Call the parent's onSendMessage function
+      if (onSendMessage) {
+        await onSendMessage(messageText);
       }
     }
   };
@@ -50,11 +56,16 @@ function ChatInput() {
           value={inputValue}
           onChange={handleInputChange}
           onKeyDown={handleKeyPress}
-          placeholder="Start Adding Tasks"
+          placeholder="Type your message..."
           className="chat-text-input"
           rows="1" // Visual hint, but JS manages actual height
+          disabled={disabled}
         ></textarea>
-        <button className="send-button" onClick={handleSendMessage}>
+        <button 
+          className="send-button" 
+          onClick={handleSendMessage}
+          disabled={disabled || !inputValue.trim()}
+        >
           <span className="icon">▶</span> {/* Changed icon here (Black Right-Pointing Triangle) */}
         </button>
       </div>

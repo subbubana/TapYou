@@ -1,5 +1,5 @@
 // src/pages/TodoListPage.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import TaskCard from '../components/TaskCard';
@@ -20,6 +20,7 @@ function TodoListPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTaskForModal, setSelectedTaskForModal] = useState(null);
   const [taskCounts, setTaskCounts] = useState({ active: 0, completed: 0, backlog: 0, total: 0 }); // State for counts
+  const [lastTaskUpdate, setLastTaskUpdate] = useState(null);
   
   // New state for create task modal
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -42,7 +43,7 @@ function TodoListPage() {
   const [isAddingTask, setIsAddingTask] = useState(false);
 
   // Function to fetch and update tasks
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     if (!user?.username) return; // Ensure user is authenticated
 
     setLoading(true);
@@ -52,17 +53,25 @@ function TodoListPage() {
         activeFilter,
         selectedDate // Pass selectedDate as targetDate
       );
-      setTasks(fetchedTasks);
+    setTasks(fetchedTasks);
+      
+      // Update last task update timestamp for auto-refresh
+      if (fetchedTasks.length > 0) {
+        const latestTask = fetchedTasks.reduce((latest, task) => {
+          return new Date(task.updated_at) > new Date(latest.updated_at) ? task : latest;
+        });
+        setLastTaskUpdate(latestTask.updated_at);
+      }
     } catch (error) {
       console.error('Failed to fetch tasks:', error);
       setTasks([]); // Clear tasks on error
     } finally {
-      setLoading(false);
+    setLoading(false);
     }
-  };
+  }, [user?.username, activeFilter, selectedDate]);
 
   // Function to fetch and update counts
-  const loadTaskCounts = async () => {
+  const loadTaskCounts = useCallback(async () => {
     if (!user?.username) return;
     try {
       const fetchedCounts = await tasksApi.getTaskCounts(
@@ -74,7 +83,43 @@ function TodoListPage() {
       console.error('Failed to fetch task counts:', error);
       setTaskCounts({ active: 0, completed: 0, backlog: 0, total: 0 });
     }
-  };
+  }, [user?.username, selectedDate]);
+
+  // Function to check for task updates from backend
+  const checkForTaskUpdates = useCallback(async () => {
+    if (!user?.username) return;
+
+    try {
+      const fetchedTasks = await tasksApi.getTasks(
+        user.username,
+        activeFilter,
+        selectedDate
+      );
+      
+      // Check if there are any updates
+      if (fetchedTasks.length > 0) {
+        const latestTask = fetchedTasks.reduce((latest, task) => {
+          return new Date(task.updated_at) > new Date(latest.updated_at) ? task : latest;
+        });
+        
+        if (!lastTaskUpdate || new Date(latestTask.updated_at) > new Date(lastTaskUpdate)) {
+          // Tasks have been updated, refresh the data
+          setTasks(fetchedTasks);
+          setLastTaskUpdate(latestTask.updated_at);
+          
+          // Also refresh task counts
+          await loadTaskCounts();
+        }
+      } else if (tasks.length > 0) {
+        // All tasks were deleted, update state
+        setTasks([]);
+        setLastTaskUpdate(null);
+        await loadTaskCounts();
+      }
+    } catch (error) {
+      console.error('Failed to check for task updates:', error);
+    }
+  }, [user?.username, activeFilter, selectedDate, lastTaskUpdate, tasks.length, loadTaskCounts]);
 
   // Function to create a new task
   const handleCreateTask = async () => {
@@ -191,7 +236,13 @@ function TodoListPage() {
   useEffect(() => {
     loadTasks();
     loadTaskCounts();
-  }, [selectedDate, activeFilter, user]); // Reload when user context changes too (e.g., after login)
+  }, [loadTasks, loadTaskCounts]);
+
+  // Set up auto-refresh polling (check every 3 seconds)
+  useEffect(() => {
+    const interval = setInterval(checkForTaskUpdates, 3000);
+    return () => clearInterval(interval);
+  }, [checkForTaskUpdates]);
 
   // Date navigation handlers
   const goToYesterday = () => setSelectedDate(subDays(selectedDate, 1));
@@ -223,7 +274,7 @@ function TodoListPage() {
       console.error('Failed to update task status:', error);
       // Handle error, maybe show a toast message to user
     } finally {
-      setLoading(false);
+    setLoading(false);
     }
   };
 
@@ -232,47 +283,47 @@ function TodoListPage() {
       <Sidebar />
       <div className="main-content-area flex-container">
         <Header />
-        <div className="todo-list-page-container">
-          <div className="todo-header">
-            <div className="date-navigation">
+    <div className="todo-list-page-container">
+      <div className="todo-header">
+        <div className="date-navigation">
               <button onClick={goToYesterday} className="nav-arrow">← Previous Day</button>
-              <input
-                type="date"
-                className="today-date-picker"
-                value={format(selectedDate, 'yyyy-MM-dd')}
-                onChange={handleDateChange}
-              />
+          <input
+            type="date"
+            className="today-date-picker"
+            value={format(selectedDate, 'yyyy-MM-dd')}
+            onChange={handleDateChange}
+          />
               <button onClick={goToTomorrow} className="nav-arrow">Next Day →</button>
-            </div>
-            <div className="filter-tabs">
-              <button
+        </div>
+        <div className="filter-tabs">
+          <button
                 className={`filter-button filter-active ${activeFilter === 'active' ? 'active' : ''}`}
-                onClick={() => setActiveFilter('active')}
-              >
+            onClick={() => setActiveFilter('active')}
+          >
                 Active ({taskCounts.active})
-              </button>
-              <button
+          </button>
+          <button
                 className={`filter-button filter-completed ${activeFilter === 'completed' ? 'active' : ''}`}
-                onClick={() => setActiveFilter('completed')}
-              >
+            onClick={() => setActiveFilter('completed')}
+          >
                 Completed ({taskCounts.completed})
-              </button>
-              <button
+          </button>
+          <button
                 className={`filter-button filter-backlog ${activeFilter === 'backlog' ? 'active' : ''}`}
-                onClick={() => setActiveFilter('backlog')}
-              >
+            onClick={() => setActiveFilter('backlog')}
+          >
                 Backlog ({taskCounts.backlog})
-              </button>
-            </div>
-          </div>
+          </button>
+        </div>
+      </div>
 
-          <div className="tasks-list-area">
-            {loading ? (
-              <p className="loading-message">Loading tasks...</p>
-            ) : tasks.length === 0 ? (
-              <p className="no-tasks-message">No tasks found for this selection.</p>
-            ) : (
-              tasks.map(task => (
+      <div className="tasks-list-area">
+        {loading ? (
+          <p className="loading-message">Loading tasks...</p>
+        ) : tasks.length === 0 ? (
+          <p className="no-tasks-message">No tasks found for this selection.</p>
+        ) : (
+          tasks.map(task => (
                 <TaskCard 
                   key={task.task_id} 
                   task={task} 
@@ -280,9 +331,9 @@ function TodoListPage() {
                   onEdit={handleEditTask}
                   onDelete={handleDeleteTask}
                 />
-              ))
-            )}
-          </div>
+          ))
+        )}
+      </div>
 
           {/* Bottom add task section */}
           <div className="bottom-add-task-section">
@@ -305,12 +356,12 @@ function TodoListPage() {
             </button>
           </div>
 
-          <TaskStatusModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            onStatusChange={handleStatusChange}
-            task={selectedTaskForModal}
-          />
+      <TaskStatusModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onStatusChange={handleStatusChange}
+        task={selectedTaskForModal}
+      />
 
           {/* Create Task Modal */}
           {isCreateModalOpen && (

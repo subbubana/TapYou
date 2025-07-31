@@ -3,7 +3,7 @@ from fastapi_mcp import FastApiMCP
 from app.main import app as fastapi_app  # Import FastAPI app WITH registered routers
 
 mcp = FastApiMCP(fastapi_app)
-mcp.mount()  # Exposes all /api as MCP tools at /mcp
+mcp.mount_http()  # Exposes all /api as MCP tools at /mcp
 
 app = fastapi_app  # To allow `uvicorn app.mcp_server.server:app`
 
