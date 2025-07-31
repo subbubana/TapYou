@@ -2,11 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
+from datetime import datetime, date
 
 from app.models import User, ChatMessage
 from app.models import ChatInput, ChatResponse, ChatMessageRead
 from app.database import get_session
-from .auth_router import get_current_active_user
+from .auth_router import get_current_active_user, oauth2_scheme
 from app.services.agent_service import call_agent_on_message
 from app.crud import store_chat_message_in_db, get_chat_history_from_db
 
@@ -28,13 +29,16 @@ async def send_message(
     user_id: UUID,
     chat_input: ChatInput,
     current_user: User = Depends(get_current_active_user),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    token: str = Depends(oauth2_scheme)  # Extract the authentication token
 ):
     print(f"=== CHAT POST ENDPOINT CALLED ===")
     print(f"User ID: {user_id}")
     print(f"Current User ID: {current_user.user_id}")
+    print(f"Username: {current_user.username}")
     print(f"Message: {chat_input.message}")
     print(f"User Chat ID: {current_user.chat_id}")
+    print(f"Auth Token: {token[:20]}...")  # Log first 20 chars of token
     
     if current_user.user_id != user_id:
         print(f"Authorization failed: {current_user.user_id} != {user_id}")
@@ -77,13 +81,25 @@ async def send_message(
         print(f"Failed to get chat history: {e}")
         # Continue without chat history
 
-    print(f"Calling agent service...")
+    print(f"Calling agent service with authentication token...")
     agent_response_content = None
     try:
+        # Create user context for the agent
+        user_context = {
+            "user_id": str(current_user.user_id),
+            "username": current_user.username,
+            "current_date": date.today().isoformat(),
+            "current_datetime": datetime.now().isoformat()
+        }
+        
+        print(f"User context for agent: {user_context}")
+        
         agent_response_content = await call_agent_on_message(
             user_input=chat_input.message,
             chat_history=chat_history_for_agent,
-            chat_id=str(user_chat_id)
+            chat_id=str(user_chat_id),
+            auth_token=token,  # Pass the authentication token to agent
+            user_context=user_context  # Pass user context to agent
         )
         print(f"Agent response received: {agent_response_content[:100]}...")
     except Exception as e:
@@ -145,7 +161,7 @@ async def get_chat_history(
 
     print(f"Fetching messages for chat_id: {user_chat_id}")
     try:
-        db_messages = await get_chat_history_from_db(user_chat_id, session, limit=50)
+        db_messages = await get_chat_history_from_db(user_chat_id, session, limit=1000)
         print(f"Retrieved {len(db_messages)} messages from database")
         
         # Log message details for debugging
