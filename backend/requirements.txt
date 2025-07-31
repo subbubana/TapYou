@@ -4,6 +4,6 @@ psycopg[binary]
 sqlmodel==0.0.19
 python-dotenv==1.0.1
 fastapi-mcp
-langchain-mcp-adapters
-langchain-openai
-langgraph
+passlib[bcrypt]
+python-jose[cryptography]
+python-multipart

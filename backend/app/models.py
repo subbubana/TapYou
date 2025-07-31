@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional, List
 from uuid import UUID, uuid4
+from pydantic import BaseModel
 
 from sqlmodel import Field, SQLModel, Relationship
 
@@ -19,7 +20,7 @@ class User(UserBase, table=True):
     is_verified: bool = Field(default=False) # New field for verification status
     created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     chat_id: UUID = Field(default_factory=uuid4, unique=True, nullable=False)
-    chat_messages: list["ChatMessage"] = Relationship(back_populates="chat_owner")
+    chat_messages: list["ChatMessage"] = Relationship(back_populates="user")
 
     # Relationship to tasks
     tasks: list["Task"] = Relationship(back_populates="owner")
@@ -123,8 +124,26 @@ class ChatMessage(ChatMessageBase, table=True):
     __tablename__ = "chat_messages"
     message_id: UUID = Field(default_factory=uuid4, primary_key=True)
 
-    chat_owner: Optional[User] = Relationship(back_populates="chat_messages") # Relationship back to User
+    user: Optional[User] = Relationship(back_populates="chat_messages") # Relationship back to User
 
-class ChatResponse(SQLModel):
-    user_message: ChatMessage
-    agent_message: ChatMessage
+# class ChatResponse(SQLModel):
+#     user_message: ChatMessage
+#     agent_message: ChatMessage
+
+class ChatInput(BaseModel):
+    message: str
+
+class ChatResponse(BaseModel):
+    agent_response: str
+    message_id: UUID
+
+class ChatMessageRead(BaseModel):
+    chat_id: UUID
+    is_user: bool
+    is_agent: bool
+    content: str
+    timestamp: datetime
+    message_id: UUID
+
+    class Config:
+        from_attributes = True

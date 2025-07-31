@@ -83,3 +83,27 @@ export const users = {
     return authenticatedFetch(url);
   },
 };
+
+export const chatHistory = {
+  // GET /chat/history/{user_id} - Get chat history
+  getChatHistory: async (userId) => {
+    // Ensure userId is properly formatted as UUID string
+    const formattedUserId = typeof userId === 'string' ? userId : userId.toString();
+    const url = `${API_BASE_URL}/chat/history/${formattedUserId}`;
+    return authenticatedFetch(url);
+  },
+
+  // POST /chat/{user_id} - Send user message
+  sendUserMessage: async (message, userId) => {
+    // Ensure userId is properly formatted as UUID string
+    const formattedUserId = typeof userId === 'string' ? userId : userId.toString();
+    const url = `${API_BASE_URL}/chat/${formattedUserId}`;
+    return authenticatedFetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ message }),
+    });
+  },
+};
