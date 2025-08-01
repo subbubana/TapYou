@@ -31,9 +31,7 @@ class UserCreate(UserBase):
 
 class UserUpdate(SQLModel):
     """Pydantic model for updating an existing user. Allows changing username."""
-    # For a real system, you'd allow password change here too, but not username direct update from client for security
-    # Here, we're just allowing username change by authenticated user.
-    new_username: Optional[str] = Field(default=None, max_length=100, alias="username")
+    new_username: Optional[str] = Field(default=None, max_length=100, description="New username for the user")
 
 class UserResponse(UserBase):
     """Pydantic model for responding with user details."""
@@ -45,7 +43,7 @@ class UserResponse(UserBase):
         from_attributes = True
 
 
-# --- Task Models (remain largely unchanged in definition, but how they are used will change) ---
+# --- Task Models ---
 class TaskBase(SQLModel):
     task_description: str = Field(nullable=False, max_length=1000)
     current_status: str = Field(default="active", max_length=50)
@@ -60,57 +58,35 @@ class Task(TaskBase, table=True):
     last_status_change_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     owner: Optional[User] = Relationship(back_populates="tasks")
 
-
-# --- API Input/Output Models for Tasks (THESE WILL CHANGE IN ROUTERS - username field removed) ---
-# Keeping them here for now, but they will be simplified for authenticated use in the routers
+# --- API Input/Output Models for Tasks ---
 class TaskCreateInput(SQLModel):
     """
     Pydantic model for the request body when creating a new task.
-    Username is derived from the authenticated user's token.
+    User context is derived from authentication token.
     """
-    # REMOVED: username: str = Field(...)
-    task_description: str = Field(nullable=False, max_length=1000)
+    task_description: str = Field(nullable=False, max_length=1000, description="Description of the task to create")
 
 class TaskUpdateInput(SQLModel):
     """
     Pydantic model for the request body when updating an existing task.
-    Username is derived from the authenticated user's token.
+    User context is derived from authentication token.
     """
-    # REMOVED: username: str = Field(...)
-    task_description: Optional[str] = None
-    current_status: Optional[str] = None
-
-class TaskDeleteInput(SQLModel):
-    pass
+    task_description: Optional[str] = Field(default=None, max_length=1000, description="New description for the task")
+    current_status: Optional[str] = Field(default=None, max_length=50, description="New status for the task (active, completed, backlog)")
 
 class TaskBatchDeleteInput(SQLModel):
-    task_ids: List[UUID] = Field(nullable=False)
-
-
-# --- Standard Message Response Model (remains unchanged) ---
-class MessageResponse(SQLModel):
-    message: str
-
-# --- Authentication Models (Updated) ---
-class LoginRequest(SQLModel):
-    """Model for user login request."""
-    username: str
-    password: str
-
-class Token(SQLModel): # Renamed from LoginResponse for standard JWT naming
-    """Model for JWT access token response."""
-    access_token: str
-    token_type: str = "bearer"
-    # Added for convenience to client, though user_id is in JWT payload
-    username: str
-    user_id: UUID
+    """Pydantic model for deleting multiple tasks by their IDs."""
+    task_ids: List[UUID] = Field(..., description="List of task IDs to delete")
 
 class TaskStatusCounts(SQLModel):
-    active: int = 0
-    completed: int = 0
-    backlog: int = 0
-    total: int = 0 # Optional: A total count of all tasks for the user
+    """Pydantic model for task status counts response."""
+    active: int = Field(default=0, description="Number of active tasks")
+    completed: int = Field(default=0, description="Number of completed tasks")
+    backlog: int = Field(default=0, description="Number of backlog tasks")
+    total: int = Field(default=0, description="Total number of tasks")
 
+
+# --- Chat Models ---
 class ChatMessageBase(SQLModel):
     """Base model for chat message properties."""
     chat_id: UUID = Field(foreign_key="users.chat_id", nullable=False, index=True) # Links to User's chat_id
@@ -126,18 +102,17 @@ class ChatMessage(ChatMessageBase, table=True):
 
     user: Optional[User] = Relationship(back_populates="chat_messages") # Relationship back to User
 
-# class ChatResponse(SQLModel):
-#     user_message: ChatMessage
-#     agent_message: ChatMessage
+class ChatInput(SQLModel):
+    """Pydantic model for chat input."""
+    message: str = Field(..., description="Message content to send to the agent")
 
-class ChatInput(BaseModel):
-    message: str
+class ChatResponse(SQLModel):
+    """Pydantic model for chat response."""
+    agent_response: str = Field(..., description="Response from the AI agent")
+    message_id: UUID = Field(..., description="ID of the stored agent message")
 
-class ChatResponse(BaseModel):
-    agent_response: str
-    message_id: UUID
-
-class ChatMessageRead(BaseModel):
+class ChatMessageRead(SQLModel):
+    """Pydantic model for reading chat messages."""
     chat_id: UUID
     is_user: bool
     is_agent: bool
@@ -147,3 +122,23 @@ class ChatMessageRead(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# --- Authentication Models ---
+class LoginRequest(SQLModel):
+    """Model for user login request."""
+    username: str = Field(..., description="Username for login")
+    password: str = Field(..., description="Password for login")
+
+class Token(SQLModel):
+    """Model for JWT access token response."""
+    access_token: str = Field(..., description="JWT access token")
+    token_type: str = Field(default="bearer", description="Token type")
+    username: str = Field(..., description="Username of the authenticated user")
+    user_id: UUID = Field(..., description="User ID of the authenticated user")
+
+
+# --- Standard Response Models ---
+class MessageResponse(SQLModel):
+    """Standard message response model."""
+    message: str = Field(..., description="Response message")
