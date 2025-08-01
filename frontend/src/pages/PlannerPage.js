@@ -37,12 +37,22 @@ function PlannerPage() {
 
     setLoading(true);
     try {
+      console.log('Fetching chat history for user:', user.user_id);
       const chatHistory = await chatApi.getChatHistory(user.user_id);
+      console.log('Chat history received:', chatHistory);
+      console.log('Number of messages:', chatHistory.length);
+      
+      if (chatHistory.length > 0) {
+        console.log('First message:', chatHistory[0]);
+        console.log('Last message:', chatHistory[chatHistory.length - 1]);
+      }
+      
       setMessages(chatHistory);
       
       // Update last message ID for auto-refresh
       if (chatHistory.length > 0) {
         setLastMessageId(chatHistory[chatHistory.length - 1].message_id);
+        console.log('Set last message ID:', chatHistory[chatHistory.length - 1].message_id);
       }
     } catch (error) {
       console.error('Failed to fetch chat history:', error);
@@ -64,8 +74,20 @@ function PlannerPage() {
         const latestMessageId = chatHistory[chatHistory.length - 1].message_id;
         
         if (latestMessageId !== lastMessageId) {
-          // New messages found, update the state
-          setMessages(chatHistory);
+          // New messages found, add only the new ones to existing state
+          setMessages(prev => {
+            // Find messages that are not already in the UI
+            const newMessages = chatHistory.filter(dbMsg => 
+              !prev.some(uiMsg => uiMsg.message_id === dbMsg.message_id)
+            );
+            
+            if (newMessages.length > 0) {
+              console.log('Adding new messages to UI:', newMessages.length);
+              return [...prev, ...newMessages];
+            }
+            
+            return prev;
+          });
           setLastMessageId(latestMessageId);
         }
       }

@@ -3,7 +3,3 @@ uvicorn==0.30.1
 psycopg[binary]
 sqlmodel==0.0.19
 python-dotenv==1.0.1
-fastapi-mcp
-passlib[bcrypt]
-python-jose[cryptography]
-python-multipart
