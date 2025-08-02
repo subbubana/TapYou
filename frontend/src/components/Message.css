@@ -38,3 +38,86 @@
     margin: 0;
     line-height: 1.4;
   }
+
+  /* Markdown-specific styles for agent messages */
+  .agent-message .message-bubble h1,
+  .agent-message .message-bubble h2,
+  .agent-message .message-bubble h3,
+  .agent-message .message-bubble h4,
+  .agent-message .message-bubble h5,
+  .agent-message .message-bubble h6 {
+    color: #fff;
+    margin: 16px 0 8px 0;
+    font-weight: 600;
+  }
+
+  .agent-message .message-bubble h1:first-child,
+  .agent-message .message-bubble h2:first-child,
+  .agent-message .message-bubble h3:first-child {
+    margin-top: 0;
+  }
+
+  .agent-message .message-bubble ul,
+  .agent-message .message-bubble ol {
+    margin: 8px 0;
+    padding-left: 20px;
+  }
+
+  .agent-message .message-bubble li {
+    margin: 4px 0;
+    line-height: 1.4;
+  }
+
+  .agent-message .message-bubble code {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    font-family: 'Courier New', monospace;
+  }
+
+  .agent-message .message-bubble pre {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 12px;
+    border-radius: 6px;
+    overflow: auto;
+    margin: 8px 0;
+  }
+
+  .agent-message .message-bubble pre code {
+    background-color: transparent;
+    padding: 0;
+  }
+
+  .agent-message .message-bubble blockquote {
+    border-left: 4px solid rgba(255, 255, 255, 0.3);
+    margin: 8px 0;
+    padding-left: 12px;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .agent-message .message-bubble table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 8px 0;
+  }
+
+  .agent-message .message-bubble th,
+  .agent-message .message-bubble td {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 8px;
+    text-align: left;
+  }
+
+  .agent-message .message-bubble th {
+    background-color: rgba(255, 255, 255, 0.1);
+    font-weight: 600;
+  }
+
+  .agent-message .message-bubble strong {
+    font-weight: 600;
+  }
+
+  .agent-message .message-bubble em {
+    font-style: italic;
+  }

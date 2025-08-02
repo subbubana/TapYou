@@ -38,7 +38,7 @@ function PlannerPage() {
     setLoading(true);
     try {
       console.log('Fetching chat history for user:', user.user_id);
-      const chatHistory = await chatApi.getChatHistory(user.user_id);
+      const chatHistory = await chatApi.getChatHistory();
       console.log('Chat history received:', chatHistory);
       console.log('Number of messages:', chatHistory.length);
       
@@ -67,7 +67,7 @@ function PlannerPage() {
     if (!user?.user_id || !lastMessageId) return;
 
     try {
-      const chatHistory = await chatApi.getChatHistory(user.user_id);
+      const chatHistory = await chatApi.getChatHistory();
       
       // Check if there are new messages
       if (chatHistory.length > 0) {
@@ -200,7 +200,7 @@ function PlannerPage() {
     try {
       // Send user message to backend
       console.log('Sending message to backend:', messageText);
-      const response = await chatApi.sendUserMessage(messageText, user.user_id);
+      const response = await chatApi.sendUserMessage(messageText);
       console.log('Backend response:', response);
       
       // If we get a successful response, the agent message should be included
@@ -233,7 +233,7 @@ function PlannerPage() {
       // Wait a moment and then check for new messages
       setTimeout(async () => {
         try {
-          const chatHistory = await chatApi.getChatHistory(user.user_id);
+          const chatHistory = await chatApi.getChatHistory();
           console.log('Polling after POST failure, found messages:', chatHistory.length);
           
           if (chatHistory.length > 0) {
