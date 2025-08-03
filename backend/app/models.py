@@ -49,6 +49,8 @@ class TaskBase(SQLModel):
     task_description: str = Field(nullable=False, max_length=1000)
     current_status: str = Field(default="active", max_length=50)
     user_id: UUID = Field(foreign_key="users.user_id", nullable=False, index=True)
+    task_date: date = Field(default_factory=date.today, nullable=False, description="The logical date this task is for")
+
 
 class Task(TaskBase, table=True):
     __tablename__ = "tasks"
@@ -65,7 +67,8 @@ class TaskCreateInput(SQLModel):
     Pydantic model for the request body when creating a new task.
     User context is derived from authentication token.
     """
-    task_date: date = Field(..., description="The date of the task. If not provided, the current date will be used.")
+    task_date: Optional[date] = Field(None, description="The date of the task. If omitted, uses today (server date).")
+    current_status: Optional[str] = Field(default="active", max_length=50, description="The current status of the task (active, completed, backlog)")
     task_description: str = Field(nullable=False, max_length=1000, description="Description of the task to create")
 
 class TaskUpdateInput(SQLModel):
