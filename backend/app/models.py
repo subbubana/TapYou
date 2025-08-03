@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional, List
 from uuid import UUID, uuid4
 from pydantic import BaseModel
+from datetime import date
 
 from sqlmodel import Field, SQLModel, Relationship
 
@@ -64,6 +65,7 @@ class TaskCreateInput(SQLModel):
     Pydantic model for the request body when creating a new task.
     User context is derived from authentication token.
     """
+    task_date: date = Field(..., description="The date of the task. If not provided, the current date will be used.")
     task_description: str = Field(nullable=False, max_length=1000, description="Description of the task to create")
 
 class TaskUpdateInput(SQLModel):

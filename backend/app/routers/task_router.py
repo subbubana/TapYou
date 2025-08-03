@@ -31,6 +31,7 @@ async def create_task(
     *,
     session: Session = Depends(get_session),
     task_input: models.TaskCreateInput, # Use the proper input model
+    task_date: date = Query(..., description="The date of the task. If not provided, the current date will be used."),
     current_user: models.User = Depends(get_current_active_user) # Get authenticated user
 ):
     """
@@ -39,6 +40,7 @@ async def create_task(
     # user_id comes directly from the authenticated user
     db_task_base = models.TaskBase(
         user_id=current_user.user_id, # User ID from JWT
+        task_date=task_date,
         task_description=task_input.task_description
     )
     db_task = models.Task.model_validate(db_task_base)
