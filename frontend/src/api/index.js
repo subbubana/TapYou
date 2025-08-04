@@ -20,20 +20,19 @@ export const tasks = {
     return authenticatedFetch(url);
   },
 
-  // PUT /tasks/{task_id} - Update task status or description
-  updateTask: async (taskId, updates) => {
+  // PUT /tasks/{task_id}
+  updateTaskStatus: async (taskId, newStatus, currentUsername) => { // Added currentUsername for consistency
     const url = `${API_BASE_URL}/tasks/${taskId}`;
     return authenticatedFetch(url, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      // Backend PUT endpoint accepts task_description and/or current_status
-      body: JSON.stringify(updates),
+      // Backend PUT endpoint for task no longer takes 'username' in body,
+      // as authentication is handled by JWT header.
+      body: JSON.stringify({ current_status: newStatus }),
     });
   },
-
-
 
   // NEW: GET /tasks/user/{username}/counts
   getTaskCounts: async (username, targetDate) => {
@@ -47,7 +46,6 @@ export const tasks = {
   // You can add other task API calls here (createTask, deleteTask, etc.)
   createTask: async (task_description) => {
     const url = `${API_BASE_URL}/tasks/`;
-    
     return authenticatedFetch(url, {
       method: 'POST',
       headers: {
@@ -81,29 +79,5 @@ export const users = {
   getUserProfile: async (username) => {
     const url = `${API_BASE_URL}/users/${username}`;
     return authenticatedFetch(url);
-  },
-};
-
-export const chatHistory = {
-  // GET /chat/history/{user_id} - Get chat history
-  getChatHistory: async (userId) => {
-    // Ensure userId is properly formatted as UUID string
-    const formattedUserId = typeof userId === 'string' ? userId : userId.toString();
-    const url = `${API_BASE_URL}/chat/history/${formattedUserId}`;
-    return authenticatedFetch(url);
-  },
-
-  // POST /chat/{user_id} - Send user message
-  sendUserMessage: async (message, userId) => {
-    // Ensure userId is properly formatted as UUID string
-    const formattedUserId = typeof userId === 'string' ? userId : userId.toString();
-    const url = `${API_BASE_URL}/chat/${formattedUserId}`;
-    return authenticatedFetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ message }),
-    });
   },
 };
