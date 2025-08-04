@@ -78,10 +78,14 @@ class TaskUpdateInput(SQLModel):
     """
     task_description: Optional[str] = Field(default=None, max_length=1000, description="New description for the task")
     current_status: Optional[str] = Field(default=None, max_length=50, description="New status for the task (active, completed, backlog)")
+    task_date: Optional[date] = Field(default=None, description="The date of the task. If omitted, use the current target date.")
 
 class TaskBatchDeleteInput(SQLModel):
     """Pydantic model for deleting multiple tasks by their IDs."""
     task_ids: List[UUID] = Field(..., description="List of task IDs to delete")
+
+class TaskCountRequest(SQLModel):
+    target_date: date = Field(..., description="Filter counts for tasks for this date (YYYY-MM-DD)")
 
 class TaskStatusCounts(SQLModel):
     """Pydantic model for task status counts response."""
