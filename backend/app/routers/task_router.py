@@ -19,7 +19,7 @@ router = APIRouter(
     response_model=models.Task,
     status_code=status.HTTP_201_CREATED,
     summary="Create a new task for the authenticated user",
-    description="Creates a new task associated with the currently authenticated user. Task status defaults to 'active'.",
+    description="Creates a new task associated with the currently authenticated user. Task status defaults to 'active' The task_date is the date the task is for, if not provided, the current system date will be used. The task_description is the description of the task. The current_status is the status of the task and will take active, completed , or backlog as task stattus. If not provided the task will be created as 'active'.",
     operation_id="create_task",
     responses={
         201: {"description": "Task successfully created."},
@@ -100,6 +100,9 @@ async def update_task(
     if task_input.current_status is not None:
         db_task.current_status = task_input.current_status
 
+    if task_input.task_date is not None:
+        db_task.task_date = task_input.task_date
+
     db_task.modified_at = datetime.utcnow()
     session.add(db_task)
     session.commit()
@@ -110,7 +113,7 @@ async def update_task(
     "/{task_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a single task",
-    description="Deletes a specific task by its ID. Requires authentication.",
+    description="Deletes a specific task by the task_id",
     operation_id="delete_single_task",
     responses={
         204: {"description": "Task successfully deleted."},
@@ -151,7 +154,7 @@ async def delete_single_task(
     response_model=models.MessageResponse,
     status_code=status.HTTP_200_OK,
     summary="Delete multiple tasks",
-    description="Deletes multiple tasks by their IDs. Requires authentication. All tasks in the list must be owned by the authenticated user for the operation to succeed.",
+    description="Deletes multiple tasks by task_ids.",
     operation_id="delete_multiple_tasks",
     responses={
         200: {"description": "Tasks successfully deleted."},
@@ -207,7 +210,7 @@ async def delete_multiple_tasks(
     response_model=models.Task,
     tags=["Tasks"],
     summary="Retrieve details of a single task",
-    description="Fetches the complete details of a specific task by its ID. Requires authentication.",
+    description="Fetches the complete details of a specific task by its ID.",
     operation_id="get_task_details",
     responses={
         200: {"description": "Task details retrieved successfully."},
@@ -246,7 +249,7 @@ async def get_task_details(
     response_model=List[models.Task],
     tags=["Tasks"],
     summary="List tasks for the authenticated user",
-    description="Retrieves a list of tasks for the currently authenticated user, with options for filtering, sorting, and pagination.",
+    description="Retrieves a list of tasks for the user for the target_date. If no date is provided, the current system date will be used. By default, we will show all tasks for the current date including active, completed, and backlog tasks.",
     operation_id="list_user_tasks",
     responses={
         200: {"description": "List of tasks retrieved successfully."},
@@ -282,10 +285,10 @@ async def list_user_tasks(
     if status is None:
         # If no status filter, return all tasks for the date (for counting purposes)
         # This will include tasks created on the target_date regardless of their current status
-        query = query.where(func.date(models.Task.created_at) == target_date)
+        query = query.where(func.date(models.Task.task_date) == target_date)
     elif status.lower() == 'active':
         # For 'active' status, filter by created_at date
-        query = query.where(func.date(models.Task.created_at) == target_date)
+        query = query.where(func.date(models.Task.task_date) == target_date)
     elif status.lower() == 'completed':
         # For 'completed', filter by last_status_change_at date
         query = query.where(
@@ -325,11 +328,11 @@ async def list_user_tasks(
     return tasks
 
 @router.get(
-    "/counts",
+    "/user/counts",
     response_model=models.TaskStatusCounts,
     tags=["Tasks"],
     summary="Get task counts by status for the authenticated user",
-    description="Returns the total count of active, completed, and backlog tasks for the authenticated user.",
+    description="Returns the total count of active, completed, and backlog tasks for the authenticated user for a specific date. If no date is provided, the current system date will be used.",
     operation_id="get_user_task_counts",
     responses={
         200: {"description": "Task counts retrieved successfully."},
@@ -340,26 +343,27 @@ async def get_user_task_counts(
     *,
     session: Session = Depends(get_session),
     current_user: models.User = Depends(get_current_active_user),
-    target_date: date = Query(..., description="Filter counts for tasks associated with this specific date (YYYY-MM-DD)."),
+    target_date: date = Query(..., description="Filter counts for tasks for this date (YYYY-MM-DD)")
 ):
     """
     **Endpoint to get task counts by status for the authenticated user.**
     """
     # Count active tasks (created on target_date)
+    # print(f"task_count_request.target_date: {target_date}")
     active_count = session.exec(
         select(func.count(models.Task.task_id)).where(
-            (models.Task.user_id == current_user.user_id) & \
-            (models.Task.current_status == "active") & \
-            (func.date(models.Task.created_at) == target_date)
+            (models.Task.user_id == current_user.user_id) &
+            (models.Task.current_status == "active") &
+            (models.Task.task_date == target_date)
         )
     ).first() or 0
 
     # Count completed tasks (status changed to completed on target_date)
     completed_count = session.exec(
         select(func.count(models.Task.task_id)).where(
-            (models.Task.user_id == current_user.user_id) & \
-            (models.Task.current_status == "completed") & \
-            (models.Task.last_status_change_at != None) & \
+            (models.Task.user_id == current_user.user_id) &
+            (models.Task.current_status == "completed") &
+            (models.Task.last_status_change_at != None) &
             (func.date(models.Task.last_status_change_at) == target_date)
         )
     ).first() or 0
@@ -367,9 +371,9 @@ async def get_user_task_counts(
     # Count backlog tasks (status changed to backlog on or before target_date)
     backlog_count = session.exec(
         select(func.count(models.Task.task_id)).where(
-            (models.Task.user_id == current_user.user_id) & \
-            (models.Task.current_status == "backlog") & \
-            (models.Task.last_status_change_at != None) & \
+            (models.Task.user_id == current_user.user_id) &
+            (models.Task.current_status == "backlog") &
+            (models.Task.last_status_change_at != None) &
             (func.date(models.Task.last_status_change_at) <= target_date)
         )
     ).first() or 0
@@ -382,6 +386,9 @@ async def get_user_task_counts(
         backlog=backlog_count,
         total=total_count
     )
+
+
+
 
 @router.post(
     "/auto-mark-backlog",
